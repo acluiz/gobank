@@ -28,7 +28,7 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 
 func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := f(w, r); err!= nil {
+		if err := f(w, r); err != nil {
 			WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
 		}
 	}
@@ -39,7 +39,6 @@ func NewAPIServer(listenAddr string) *APIServer {
 		listenAddr: listenAddr,
 	}
 }
-
 
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
@@ -59,12 +58,12 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "POST" {
 		return s.handleCreateAccount(w, r)
 	}
-	
+
 	if r.Method == "DELETE" {
 		return s.handleDeleteAccount(w, r)
 	}
 
-	return fmt.Errorf("Method not allowed %s", r.Method)
+	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
 func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
