@@ -10,7 +10,8 @@ import (
 )
 
 type APIServer struct {
-	listenAddr string
+	listenAddr	string
+	store		Storage
 }
 
 type APIError struct {
@@ -19,9 +20,10 @@ type APIError struct {
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
 
-func NewAPIServer(listenAddr string) *APIServer {
+func NewAPIServer(listenAddr string, store Storage) *APIServer {
 	return &APIServer{
-		listenAddr: listenAddr,
+		listenAddr:	listenAddr,
+		store:		store,
 	}
 }
 
