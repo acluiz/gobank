@@ -16,7 +16,7 @@ type APIServer struct {
 }
 
 type APIError struct {
-	Error string
+	Error string	`json:"error"`
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
@@ -32,7 +32,7 @@ func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/account", makeHTTPHandlerFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandlerFunc(s.handleGetAccountByID))
+	router.HandleFunc("/account/{id}", makeHTTPHandlerFunc(s.handleAccountByID))
 
 	log.Println("JSON API server running at port: ", s.listenAddr)
 
@@ -46,6 +46,14 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 
 	if r.Method == "POST" {
 		return s.handleCreateAccount(w, r)
+	}
+
+	return fmt.Errorf("method not allowed %s", r.Method)
+}
+
+func (s *APIServer) handleAccountByID(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return s.handleGetAccountByID(w, r)
 	}
 
 	if r.Method == "DELETE" {
@@ -66,13 +74,12 @@ func (s *APIServer) handleGetAccounts(w http.ResponseWriter, r *http.Request) er
 }
 
 func (s *APIServer) handleGetAccountByID(w http.ResponseWriter, r *http.Request) error {
-	idParam := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(idParam)
-
+	id, err := getID(r)
+		
 	if err != nil {
-		return fmt.Errorf("Invalid ID given")
+		return err
 	}
-	
+
 	account, err := s.store.GetAccountByID(id)
 
 	if err != nil {
@@ -103,7 +110,17 @@ func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request
 }
 
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id, err := getID(r)
+	
+	if err != nil {
+		return err
+	}
+
+	if err := s.store.DeleteAccount(id); err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusOK, map[string]int{"id": id})
 }
 
 func WriteJSON(w http.ResponseWriter, status int, v any) error {
@@ -119,4 +136,15 @@ func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 			WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
 		}
 	}
+}
+
+func getID(r *http.Request) (int, error) {
+	idParam := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idParam)
+
+	if err != nil {
+		return id, fmt.Errorf("invalid ID given")
+	}
+
+	return id, nil
 }
